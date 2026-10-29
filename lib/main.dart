@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const MagisterApp());
@@ -39,6 +40,14 @@ class _MagisterAppState extends State<MagisterApp> {
       _token = savedToken;
       _isLoading = false;
     });
+  }
+
+  Future<void> _launchAuthUrl(String urlString) async {
+    final Uri url= Uri.parse(urlString);
+
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      print('Could not launch $url');
+    }
   }
 
   @override
@@ -93,10 +102,25 @@ class _MagisterAppState extends State<MagisterApp> {
                   ElevatedButton(
                     onPressed: () {
                       String school = _schoolController.text.trim();
-                      print('User enterd school: $school');
 
-                      // build login URL here
-                    },
+                      if (school.isEmpty) {
+                        print('Error: School subdomain cannot be empty');
+                        return;
+                      }
+
+                      String authUrl = 'https://accounts.magister.net/connect/authorize?'
+                          'client_id=M6-$school.magister.net&'
+                          'redirect_uri=https://$school.magister.net/oidc/redirect_callback.html&'
+                          'response_type=id_token token&'
+                          'scope=openid profile opp.read opp.manage attendance.overview attendance.administration calendar.user calendar.ical.user calendar.to-do.user grades.read grades.manage oso.administration registration.admin lockers.administration exams.administration enrollment.admin privacyportal.administration learningmaterials.user&'
+                          'state=811b239be24b4f6dac5c553e3f0591da&'
+                          'nonce=385004e8675547a99061a95056ecddf5&'
+                          'acr_values=tenant:$school.magister.net';
+
+                          print(authUrl);
+
+                          _launchAuthUrl(authUrl);
+                     },
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24, 
